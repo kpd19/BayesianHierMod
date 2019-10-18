@@ -1,0 +1,52 @@
+model{
+  ##########
+  # Priors #
+  ##########
+  # Virus-level transmission parameters.
+  # Eight  viruses
+  # Two tree species
+
+  for(m in 1:2){
+    for(t in 1:2){
+      # nu.bar (log scale):
+      M_eff_mean[m,t] ~ dnorm(0, 1 / (2 ^ 2))
+      # M_eff_mean[m,t] <- exp(MM_eff_mean[m,t])
+    }
+  }
+
+  for(m in 1:2){
+      for(t in 1:2){
+      n.sigma[m,t] ~ dunif(0, 10)
+    }
+  }
+
+  for(j in 1:len_iso){
+    for(t in 1:2){
+        Iisolate_eff[j,t] ~ dnorm(mu, n.sigma[morph.index[j],t]^(-2))
+        isolate_eff[j,t] = exp(Iisolate_eff[j,t])
+        isolate_est[j,t] = M_eff_mean[morph.index[j],t] + isolate_eff[j,t]
+    }
+  }
+
+
+  mu ~ dnorm(-8,1/4)
+
+  ##############
+  # LIKELIHOOD #
+  ##############
+  for(i in 1:N.obs){
+    # Binomial likelihood:
+    # n.inf = number infected from each bag
+    # n.recov = total number recovered from each bag at end of experiment
+
+    n.inf[i] ~ dbin(prob[i], n.recov[i])
+    # No Heterogeneity model:
+    prob[i] = 1 - exp(-isolate_est[Isolate[i],Tree[i]]*P[i]*7)
+
+    ## log likelihood
+    
+    # loglik[i] = logdensity.bin(n.inf[i], n.recov[i], prob[i])
+
+
+  } 
+}
